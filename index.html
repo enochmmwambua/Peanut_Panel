@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Peanut's Panel</title>
+    <style>
+        /* Import fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+
+        /* Color variables */
+        :root {
+            --bg-base: #13050e;
+            --glass-bg: rgba(30, 10, 22, 0.5);
+            --glass-border: rgba(255, 126, 179, 0.15);
+            --accent-pink: #ff7eb3;
+            --accent-purple: #9d4edd;
+            --accent-danger: #ff4d4d;
+            --text-main: #fcf0f4;
+            --text-muted: #b897a6;
+        }
+
+        /* Reset defaults */
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+
+        /* Base body styles */
+        body {
+            font-family: 'Lora', serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Ambient background */
+        .ambient-bg {
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(255, 126, 179, 0.08), transparent 40%),
+                radial-gradient(circle at 70% 60%, rgba(157, 78, 221, 0.08), transparent 50%),
+                radial-gradient(circle at 50% 10%, rgba(255, 182, 193, 0.05), transparent 40%);
+            animation: breathe 25s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        /* Background animation */
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Navbar container */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 1.5rem 2rem;
+            background: rgba(19, 5, 14, 0.8); backdrop-filter: blur(10px);
+            z-index: 100; display: flex; justify-content: center; gap: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        /* Nav links */
+        nav a { color: var(--text-muted); text-decoration: none; font-family: 'Playfair Display', serif; font-size: 1.1rem; transition: color 0.3s ease; }
+        nav a:hover { color: var(--accent-pink); }
+
+        /* Main wrapper */
+        .container { max-width: 1200px; margin: 0 auto; padding: 8rem 2rem 4rem 2rem; }
+        
+        /* Headers */
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+        
+        /* Sections */
+        section { margin-bottom: 6rem; scroll-margin-top: 6rem; }
+        .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; background: linear-gradient(45deg, var(--accent-pink), #ffb8d2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Glass panels */
+        .panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); }
+        
+        /* Grid layout */
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+
+        /* Clocks wrapper */
+        .clock-container { 
+            display: flex; justify-content: center; gap: 4rem; text-align: center; flex-wrap: wrap; 
+        }
+        
+        /* Clock text */
+        .clock-time { font-size: 2.5rem; font-family: 'Playfair Display', serif; }
+        .clock-label { font-size: 0.8rem; color: var(--accent-pink); text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Progress bar */
+        .progress-bar-container { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 1rem 0; }
+        .progress-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple)); box-shadow: 0 0 10px var(--accent-pink); }
+
+        /* Big red button */
+        .override-btn {
+            display: block; width: 100%; padding: 1.5rem; margin-top: 1rem;
+            background: rgba(255, 77, 77, 0.05); border: 1px solid rgba(255, 77, 77, 0.3);
+            border-radius: 12px; color: var(--accent-danger); font-family: 'Playfair Display', serif;
+            font-size: 1.2rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s ease; text-align: center;
+        }
+        .override-btn:hover { background: rgba(255, 77, 77, 0.2); box-shadow: 0 0 20px rgba(255, 77, 77, 0.4); transform: scale(1.02); }
+
+        /* Modal background */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 0, 2, 0.95); backdrop-filter: blur(20px);
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        /* Modal box */
+        .modal-content { max-width: 800px; padding: 3rem; text-align: center; transform: translateY(20px); transition: transform 0.5s ease; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        /* Modal header */
+        .modal-title {
+            color: var(--accent-danger); font-size: 1.5rem; letter-spacing: 4px;
+            text-transform: uppercase; margin-bottom: 2rem; border-bottom: 1px solid rgba(255, 77, 77, 0.3); padding-bottom: 1rem;
+        }
+        
+        /* Modal paragraph */
+        .modal-text { font-size: 1.4rem; line-height: 1.8; color: #fff; margin-bottom: 3rem; }
+        
+        /* Modal close btn */
+        .close-modal {
+            background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);
+            padding: 0.8rem 2rem; border-radius: 30px; cursor: pointer; font-family: 'Lora', serif; transition: all 0.3s ease;
+        }
+        .close-modal:hover { background: var(--text-muted); color: var(--bg-base); }
+
+        /* Menu list */
+        .triage-options { display: flex; flex-direction: column; gap: 1rem; max-width: 400px; margin: 0 auto; }
+        
+        /* Menu buttons */
+        .triage-btn {
+            background: rgba(255, 77, 77, 0.05); border: 1px solid rgba(255, 77, 77, 0.3); color: var(--text-main); 
+            padding: 1.2rem; font-family: 'Playfair Display', serif; font-size: 1.1rem; text-align: left; 
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;
+        }
+        .triage-btn:hover { background: rgba(255, 77, 77, 0.2); border-color: var(--accent-danger); transform: translateX(10px); }
+
+        /* Photo grid */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 3rem; padding: 2rem 0; }
+        
+        /* Photo card */
+        .polaroid { background: #fff; padding: 12px 12px 40px 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); transition: transform 0.4s ease; position: relative; }
+        .polaroid:nth-child(odd) { transform: rotate(-2deg); }
+        .polaroid:nth-child(even) { transform: rotate(2deg); }
+        .polaroid:hover { transform: scale(1.05) rotate(0deg); z-index: 10; }
+        
+        /* Photo image */
+        .polaroid img { width: 100%; height: 250px; object-fit: cover; background: #ddd; }
+        
+        /* Photo text */
+        .polaroid-caption { position: absolute; bottom: 12px; width: 100%; left: 0; text-align: center; color: #111; font-family: 'Playfair Display', serif; font-weight: bold;}
+        
+        /* Letter list */
+        .letters-container { display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        /* Letter item */
+        .letter-card { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem; cursor: pointer; transition: all 0.3s ease; }
+        .letter-card:hover { background: rgba(255, 126, 179, 0.1); border-color: var(--accent-pink); }
+        
+        /* Letter top bar */
+        .letter-header { display: flex; justify-content: space-between; align-items: center; }
+        .letter-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--text-main); }
+        .letter-date { font-size: 0.9rem; color: var(--accent-purple); }
+        
+        /* Letter hidden content */
+        .letter-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; color: var(--text-muted); line-height: 1.8; margin-top: 0; opacity: 0; }
+        
+        /* Letter shown content */
+        .letter-card.active .letter-body { max-height: 1000px; margin-top: 1.5rem; opacity: 1; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        /* Timeline vertical line */
+        .timeline { border-left: 2px solid var(--glass-border); padding-left: 2rem; margin-left: 1rem; }
+        
+        /* Timeline row */
+        .timeline-item { position: relative; margin-bottom: 2.5rem; }
+        
+        /* Timeline dot */
+        .timeline-item::before { content: ''; position: absolute; left: -2.45rem; top: 0.3rem; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-pink); box-shadow: 0 0 10px var(--accent-pink); }
+        
+        /* Timeline text */
+        .timeline-date { color: var(--accent-purple); font-weight: bold; font-family: 'Playfair Display', serif;}
+        .timeline-content { margin-top: 0.5rem; color: var(--text-muted); line-height: 1.6; }
+
+        /* Mobile tweaks */
+        @media (max-width: 768px) { nav { gap: 1rem; font-size: 0.9rem; } .dash-grid { grid-template-columns: 1fr; } .modal-content { padding: 1.5rem; } .modal-text { font-size: 1.1rem; } }
+        
+        /* Floating hearts */
+        .sparkle-heart {
+            position: fixed; bottom: -20px; color: var(--accent-pink); font-size: 14px;
+            pointer-events: none; opacity: 0; z-index: 50; text-shadow: 0 0 10px var(--accent-pink);
+            animation: floatUp ease-in forwards;
+        }
+
+        /* Heart animation */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 0.4; }
+            80% { opacity: 0.4; }
+            100% { transform: translateY(-150px) scale(1.2); opacity: 0; }
+        }
+
+        /* Music bars */
+        .eq-bar { width: 6px; border-radius: 3px; background: linear-gradient(to top, var(--accent-purple), var(--accent-pink)); }
+        
+        /* Bar animation */
+        @keyframes eq {
+            0%, 100% { height: 8px; }
+            50% { height: 35px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg"></div>
+
+    <div class="modal-overlay" id="overrideModal">
+        <div class="modal-content" id="modal-container">
+            
+            <div id="triage-phase">
+                <div class="modal-title">// DIAGNOSTIC REQUIRED</div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">Identify the source of the system alert.</p>
+                <div class="triage-options">
+                    <button class="triage-btn" onclick="triggerMessage('academic')">01 // ANXIETY ON SCHOOL OR FUTURE</button>
+                    <button class="triage-btn" onclick="triggerMessage('imposter')">02 // FEELING LOST/ QUESTIONING YOURSELF</button>
+                    <button class="triage-btn" onclick="triggerMessage('family')">03 // FEEL DISCONNECTED/DISTANT FROM ME</button>
+                    <button class="triage-btn" onclick="triggerMessage('general')">04 // GENERAL SPIRAL</button>
+                </div>
+                <button class="close-modal" style="margin-top: 2.5rem;" onclick="closeOverride()">Cancel</button>
+            </div>
+
+            <div id="message-phase" style="display: none;">
+                <div class="modal-title" id="dynamic-title"></div>
+                <div class="modal-text" id="dynamic-text"></div>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button class="close-modal" onclick="resetTriage()">← Back</button>
+                    <button class="close-modal" style="border-color: var(--accent-danger); color: var(--accent-danger);" onclick="closeOverride()">Acknowledge</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <nav>
+        <a href="#hub">The Hub</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#letters">Weekly Letters</a>
+        <a href="#future">The Plan</a>
+    </nav>
+
+    <div class="container">
+        
+        <section id="hub">
+            <h2 class="section-title">Peanut's Panel</h2>
+            <div class="dash-grid">
+                
+                <div class="panel">
+                    <div class="clock-container">
+                        <div>
+                            <div class="clock-time" id="time-boston">--:--</div>
+                            <div class="clock-label">Tufts (Boston)</div>
+                        </div>
+                        <div>
+                            <div class="clock-time" id="time-nairobi">--:--</div>
+                            <div class="clock-label">Home (Nairobi)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="display: flex; flex-direction: column; justify-content: center;">
+                    <h3 style="color: var(--accent-pink); margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; font-family: 'Lora', serif;">// System Telemetry</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.3rem;">Physical Distance</div>
+                            <div style="font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--text-main); line-height: 1;">11,571.16<span style="font-size: 1rem; color: var(--accent-purple); margin-left: 5px;">KM</span></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.3rem;">Signal Strength</div>
+                            <div style="font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #ffb8d2; font-style: italic;">Optimal.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 style="color: var(--accent-purple); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; font-family: 'Lora', serif;">// Shared Frequency</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                            Combination of our music taste in my opinion is such an intimate thing. We'll use the blend till we make a playlist :)
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 5px; align-items: flex-end; height: 40px; margin-bottom: 1.5rem; opacity: 0.8;">
+                        <div class="eq-bar" style="animation: eq 1.2s infinite ease-in-out;"></div>
+                        <div class="eq-bar" style="animation: eq 0.8s infinite ease-in-out 0.2s;"></div>
+                        <div class="eq-bar" style="animation: eq 1.5s infinite ease-in-out 0.4s;"></div>
+                        <div class="eq-bar" style="animation: eq 1.1s infinite ease-in-out 0.1s;"></div>
+                        <div class="eq-bar" style="animation: eq 0.9s infinite ease-in-out 0.5s;"></div>
+                        <div class="eq-bar" style="animation: eq 1.3s infinite ease-in-out 0.3s;"></div>
+                        <div class="eq-bar" style="animation: eq 1.0s infinite ease-in-out 0.6s;"></div>
+                    </div>
+
+                    <a href="https://open.spotify.com/playlist/37i9dQZF1EJMqb4ga7DtOp?si=ac012079cfd24c19" target="_blank" style="display: block; padding: 0.8rem; background: rgba(255, 126, 179, 0.05); border: 1px solid var(--glass-border); color: var(--accent-pink); text-decoration: none; font-family: 'Playfair Display', serif; font-size: 0.9rem; font-weight: 600; text-align: center; letter-spacing: 2px; text-transform: uppercase; transition: all 0.3s ease; border-radius: 8px;">
+                        Access Blend ↗
+                    </a>
+                </div>
+
+                <div class="panel" style="grid-column: 1 / -1;">
+                    <h3 style="color: var(--accent-purple); margin-bottom: 1rem;" id="uptime-header">System Uptime: Live</h3>
+                    <div class="progress-bar-container"><div class="progress-fill"></div></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted);">
+                        <span>Initiated: 25.04.23</span>
+                        <span id="uptime-days" style="color: #fff; font-weight: 600; letter-spacing: 1px;"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery">
+            <h2 class="section-title">Visual Evidence of Relationship</h2>
+            <div class="gallery-grid">
+                <div class="polaroid">
+                    <img src="HII.jpeg" alt="Us">
+                    <div class="polaroid-caption">Day One</div>
+                </div>
+                <div class="polaroid">
+                    <img src="LOL.jpeg" alt="Her">
+                    <div class="polaroid-caption">My lil Peanut <3</div>
+                </div>
+                <div class="polaroid">
+                    <img src="YES.png" alt="Us">
+                    <div class="polaroid-caption">The (Annoying ass) Distance</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="letters">
+            <h2 class="section-title">Letter Archive</h2>
+
+             <div class="letters-container">
+                <div class="letter-card" onclick="toggleLetter(this)">
+                    <div class="letter-header">
+                        <div class="letter-title">Entry 01: Initiation</div>
+                        <div class="letter-date">7 April 2026</div>
+                    </div>
+                    <div class="letter-body">
+                       Hi, so sometimes I catch myself thinking about you for no apparent reason, and like you've become a huge part of my life. It's not even like one specific thing I can point to, it's just you as a whole, you know the way you think, the way you care, the little things you do without realizing.<br><br>
+Being with you doesn't feel like a weight, or some responsibility, it just feels natural, like something I keep choosing without thinking about it. I know life gets busy, and we don't always say everything we should or hang out as much as we would love to. I know things get routinal, and sometimes we forget to slow down, and actually BE one, show each other love, and just feel, but that doesn't mean anything has changed. If anything, what I feel for you has just gotten deeper and stronger over time. It's not loud or dramatic all the time, but it's steady and it's real. It's something that's just there no matter what, and I know I need to show it more.<br><br>
+You've genuinely become such a normal part of my life that it's hard to imagine it without you. Even when we're not talking, even when things are quiet, I still feel connected to you in a way I can't really explain. It's like no matter what's going on, there's always a part of me that's SO about you, and honestly, it gives me a weird kind of comfort that brings me so much peace. Not because everything is perfect, but because I know you. I know who you are, and I care about and love all of it, the good, the hangry, the parts you don't wanna show, and EVERYTHING in between.<br><br><br>
+I know you overthink sometimes and have thoughts of doubt (even though you shouldn't), and I wish you could see yourself the way I do because you're so much more than you give yourself credit for. Yeah, you're gorgeous, and I tell you that all the time, but it's so much more than that. It's the way you think, the way you treat people, and the way you just are. It's so goddamn amazing. There's something about you that stands out in a way that's hard to explain. That's why every time you ask me why I love you, I say it'll take forever to tell you. Cause I don't even know if there's words created that can properly describe everything I find so gravitational.<br><br>
+I know I'm not always the best at saying all this - I've had moments where I've been quiet or distant, and I know that's not always fair to you. But that doesn't mean I don't feel it. If anything, I probably feel more than I say, I just don't always know how to put it into words or show it to you through the screen. But I care about you like, genuinely. I care about how you're doing, how you feel, what you want out of life, EVERYTHING!<br><br>
+I care about the way you see yourself, especially when you're being too hard on yourself. I care about your goals, even the ones you probably haven't told me. And I want to be someone who actually adds something good to your life. I want to always, ALWAYS be there for you. I want to give you a home even though not physical, where you feel at ease, safe, and free to let everything loose. You matter to me. Not in some temporary way, but in a real, lasting way. The kind that doesn't just disappear when things quiet or complicated. And I know I don't always say it perfectly, and It feels weak when I'm not the best personally, but I'm here. I'm still choosing you. And if you ever question that, just remember that I love you infinitely peanut, and I always will ❤️
+                    </div>
+                </div>
+            </div>
+            <br>
+
+             <div class="letters-container">
+                <div class="letter-card" onclick="toggleLetter(this)">
+                    <div class="letter-header">
+                        <div class="letter-title">Entry 02: I like you, in the NOW</div>
+                        <div class="letter-date">18 April 2026</div>
+                    </div>
+                    <div class="letter-body"> This one won't be as long. I wanna involve you in all the small things. Like when something funny happens, you're the first person I wanna tell. Or when I hear a song and already know if you'll like it or not. And I don't share that with you enough.<br><br>
+I like you in a very present way, not just the "you mean everything to me" way. But in the way I enjoy talking to you, your random moods and energy shifts (like how you go from playful to serious real quick lol). You're fun to love, I hope you realize that. There's moments where you'll say or do something and I'll just zone out thinking "yea, it's you. You're the one". Can't explain, there's no specific reason. Just a quiet, but strong, certainty that I love having you as who you are in my life. I don't need everything with us to be perfect to feel that.<br><br>
+In Summary, I like you. A lot. In the now, not only in the deep forever way. In the everyday, talking, laughing, existing type of way. In the personal lives apart but together type of way. In the private growth but constant and present support type of way. RIGHT NOW, that's my favourite version of us ❣️
+
+                    </div>
+                </div>
+            </div>
+            <br>
+
+            <div class="letters-container">
+                <div class="letter-card" onclick="toggleLetter(this)">
+                    <div class="letter-header">
+                        <div class="letter-title">Entry 03: Three Years Later</div>
+                        <div class="letter-date">25 April 2026</div>
+                    </div>
+                    <div class="letter-body">
+                        Three years. Not in some cheap ass “wow time flies” way, but in the way you actually feel it when you stop and look back. Three full rotations around something bigger than both of us, this thing we built, this gravity that keeps pulling me back to you no matter where I drift.<br><br>
+Because that’s what it feels like, honestly. Like orbit. Not perfect circles. Not clean, predictable paths. Some days I’m closer, pulled in so tight it feels like I can’t breathe without you. Other days I’m further out, distracted, distant, caught up in my own noise. But somehow, no matter how messy it gets, I don’t leave your gravity. And I don’t EVER want to. <br><br>
+There’s something terrifying about that, if I’m being real. The idea that someone can matter this much. That you’ve become this constant in my life, this fixed point I measure everything else against. But it’s also the most grounding thing I’ve ever had. Because out of everything that changes e.g. stress, distance, moods, phases, all the chaos, we’ve stayed, and when it seemed lost, broken, or gone, we’ve found our way back to each other. Not untouched. Not perfect. But still here. Still choosing each other. Everyday<br><br>
+I think about how we started, and it’s almost funny how small it felt compared to what it’s become. Like we had no idea what we were stepping into. And maybe that’s why it worked, because we didn’t overthink it, we just kept showing up. We did our best. Even when it got hard. Especially when it got hard.<br><br>
+And yeah, I know I’m not always the easiest person to love. I get distant, I get comfortable, I forget to say things I should say. But even in that, you stayed. And that’s not something I take lightly, even if I don’t always say it out loud. You’ve seen versions of me I don’t even fully understand yet, and you embraced it. From what I know, that’s rare but that’s you.<br><br>
+And I don’t think I say this enough, but you’ve changed me in quiet ways that actually matter. The way I think, the way I care, the way I see things. You’ve shaped parts of me that are just… better because you’re in my life.<br><br>
+Three years in, and it still feels like there’s more to discover about you. More layers, more moments, more reasons I end up looking at you and thinking about how excited I am to go through this tornado we call life with you. So if this is an orbit, then I’m not counting the laps. I’m just glad I’m still moving with you. I built this space so that no matter what time it is, you always have a place to come read exactly what I’m thinking.<br><br>
+Happy three years ml
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="future">
+            <h2 class="section-title">The Master Plan</h2>
+            <div class="panel">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Phase 1: The Grind (Current)</div>
+                        <div class="timeline-content">You dominate Tufts. I conquer my CS Course. We build beautiful personal bases to cook in the future</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Phase 2: Closing the Gap</div>
+                        <div class="timeline-content">The distance dies and we build our life TOGETHER, to the point where we are both successful and ready to enjoy the fruits of our labor together.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Phase 3: The Happily Ever After</div>
+                        <div class="timeline-content">The city apartment, the constant travelling (and currency collection), the helping of those we can. Its all inevitable.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="emergency" style="margin-top: 8rem;">
+            <div class="panel" style="border-color: rgba(255, 77, 77, 0.3); background: rgba(40, 10, 15, 0.6); padding: 4rem 2rem;">
+                <h3 style="color: var(--accent-danger); margin-bottom: 1rem; text-align: center; font-size: 2.2rem; letter-spacing: 2px;">Protocol: Circuit Breaker</h3>
+                <p style="color: var(--text-muted); text-align: center; font-size: 1.1rem; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                    For use in the event of severe academic burnout, panic (be it your future or anything else), struggle with self-worth, or you feel ditant or disconnected from me. Do not press unless necessary. (I'm playing use it whenever u feel lol)
+                </p>
+                <button class="override-btn" style="max-width: 400px; margin: 0 auto; display: block;" onclick="openOverride()">// INITIATE OVERRIDE</button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Update clocks
+        function updateClocks() {
+            const now = new Date();
+            const optsBos = { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true };
+            const optsNai = { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit', hour12: true };
+            document.getElementById('time-boston').textContent = now.toLocaleTimeString('en-US', optsBos);
+            document.getElementById('time-nairobi').textContent = now.toLocaleTimeString('en-US', optsNai);
+        }
+        
+        // Loop clocks
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        // Calc uptime
+        function updateUptime() {
+            const startDate = new Date(2023, 3, 25).getTime();
+            const now = new Date().getTime();
+            
+            const elapsed = now - startDate;
+            const daysElapsed = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('uptime-days').textContent = daysElapsed.toLocaleString() + " Days";
+            
+            const yearsElapsed = (daysElapsed / 365.25).toFixed(1);
+            document.getElementById('uptime-header').textContent = `System Uptime: Year ${Math.floor(yearsElapsed)}`;
+        }
+        
+        // Loop uptime
+        updateUptime();
+        setInterval(updateUptime, 3600000);
+
+        // Accordion toggle
+        function toggleLetter(element) {
+            document.querySelectorAll('.letter-card').forEach(card => {
+                if(card !== element) card.classList.remove('active');
+            });
+            element.classList.toggle('active');
+        }
+
+        // Message text
+        const overrideDatabase = {
+            academic: {
+                title: "// ANXIETY ON SCHOOL OR FUTURE",
+                text: "Hey baby, let’s slow down for a second. I can see how much this is weighing on you, and ik it feels big right now. But this isn’t your whole life collapsing, it’s just one moment that’s loud. You don’t need to solve everything at once. Just take it piece by piece, one small step, and if you need me, get my stupid ass on call and I’ll stay right here with you while you figure it out. You’ve handled hard things before you’re not suddenly incapable now."
+            },
+            imposter: {
+                title: "// FEELING LOST/ QUESTIONING YOURSELF",
+                text: "I get why you feel like you need to figure yourself out, and I’m not here to hold you back from that. But don’t confuse being unsure with being lost. You’re still that amazing you, even in the middle of change, unknown outcomes, or hard decisions. You don’t have to have everything defined right now to be valid, to be growing, or to be enough. I’m not saying this to trap you in one place, or as empty reassurance, or to reduce the importance of what you’re feeling. I’m saying this because I need you to choose and trust you and embrace yourself as the amazing Kena I know."
+            },
+            family: {
+                title: "// FEEL DISCONNECTED/ DISTANT FROM ME",
+                text: "Hey baby, as annoying as it feels rn don’t let your brain convince you that we’ve faded into nothing. We’re still here, even if it feels quieter right now. Not every moment has to feel intense to be real. I’m still choosing you, still here, still in this, even on the days it’s not loud or perfect. We don’t have to force anything, we just have to keep showing up. And I’ll always love you and be here. NO MATTER WHAT!"
+            },
+            general: {
+                title: "// GENERAL SPIRAL",
+                text: "Halloo (sorry for the energy 🙃). You don’t have to carry all of this at once. Whatever’s going on, we can slow it down and take it piece by piece. Just breathe, reset, and focus on what’s right in front of you. I need you to take it a step at a time and not try deal with everything all at once. And if it isn’t a barrage of different things, whatever that one thing that is bothering you is, I’ve got you. You’re not alone in it, even if and when it feels like you are. If all else fails send me the 🥜 emoji and I’ll get with you as soon as I see it. Take a deep breath. Drop your shoulders. Close your eyes for 60 seconds, reset your heart rate, and remember who you are. I love you."
+            }
+        };
+
+        // Open popup
+        function openOverride() {
+            document.getElementById('overrideModal').classList.add('active');
+            resetTriage();
+        }
+
+        // Close popup
+        function closeOverride() {
+            document.getElementById('overrideModal').classList.remove('active');
+        }
+
+        // Show specific text
+        function triggerMessage(type) {
+            document.getElementById('triage-phase').style.display = 'none';
+            document.getElementById('message-phase').style.display = 'block';
+            
+            document.getElementById('dynamic-title').textContent = overrideDatabase[type].title;
+            document.getElementById('dynamic-text').innerHTML = overrideDatabase[type].text;
+        }
+
+        // Reset to buttons
+        function resetTriage() {
+            document.getElementById('triage-phase').style.display = 'block';
+            document.getElementById('message-phase').style.display = 'none';
+        }
+
+        // Particle logic
+        let emitting = false;
+        let heartInterval;
+
+        // Generate particle
+        function spawnHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('sparkle-heart');
+            heart.innerHTML = '❤'; 
+            
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 10 + 10) + 'px'; 
+            heart.style.animationDuration = (Math.random() * 2 + 2) + 's'; 
+            
+            document.body.appendChild(heart);
+            
+            setTimeout(() => {
+                heart.remove();
+            }, 4000);
+        }
+
+        // Scroll listener
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const threshold = document.body.offsetHeight - 200; 
+
+            if (scrollPosition >= threshold) {
+                if (!emitting) {
+                    emitting = true;
+                    heartInterval = setInterval(spawnHeart, 300);
+                }
+            } else {
+                if (emitting) {
+                    emitting = false;
+                    clearInterval(heartInterval);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
